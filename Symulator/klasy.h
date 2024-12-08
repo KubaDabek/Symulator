@@ -59,13 +59,63 @@ T filtr(T wartosc, T dolny, T gorny) {
     return std::max(dolny, std::min(wartosc, gorny));
 }
 
+enum class rodzajeWartosci
+{
+    skok = 0,
+    sinus = 1,
+    kwadrat = 2,
+};
+
+class WartZadana
+{
+public:
+    WartZadana(rodzajeWartosci typ, double maximum, double minimum)
+    {
+        rodzaj = typ;
+        min = minimum;
+        max = maximum;
+    };
+    double obliczWartosc(int krok)
+    {
+        if (rodzaj == rodzajeWartosci::skok)
+        {
+            return max;
+        }
+        else if (rodzaj == rodzajeWartosci::kwadrat)
+        {
+            bool minMax = 0;
+            if (krok % 20 == 0)
+            {
+                minMax = !minMax;
+            }
+            if (minMax == 0)
+            {
+                return min;
+            }
+            else
+            {
+                return max;
+            }
+        }
+        else
+        {
+            double amplituda = (abs(min) + abs(max))/2;
+            double kat = 0.0;
+        }
+    }
+
+private:
+    rodzajeWartosci rodzaj = rodzajeWartosci::skok;
+    double min = -1, max = 1;
+};
+
 class PIDController {
 private:
     double kp, ki, kd;
     double calka, bladPoprzedzajacy;
     double dolnyLimit, gornyLimit;
     bool flagaPrzeciwNasyceniowa;
-
+    WartZadana* wartosc;
     ARXModel* arxModel;
 
 public:
@@ -103,3 +153,4 @@ public:
         return arxModel;
     }
 };
+
