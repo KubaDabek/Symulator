@@ -9,9 +9,6 @@ int main() {
     ARXModel arxModel(a, b, 0.01);
     PIDController pid(1.0, 0.1, 0.05);
 
-    arxModel.setPIDController(&pid);
-    pid.setARXModel(&arxModel);
-
     pid.ustawLimity(-1.0, 1.0);
 
     double wartoscZadana = 1.0;
@@ -24,5 +21,19 @@ int main() {
             << " Wyjscie: " << wartoscProcesu
             << std::endl;
     }
+
+    // Zapis do plików
+    arxModel.zapiszText("arx.txt");
+    pid.zapiszText("pid.txt");
+    arxModel.zapiszBin("arx.bin");
+    pid.zapiszBin("pid.bin");
+
+    // Odczyt z plików
+    ARXModel wczytajARX({}, {});
+    PIDController wczytajPID(0.0, 0.0, 0.0);
+    wczytajARX.wczytajText("arx.txt");
+    wczytajPID.wczytajText("pid.txt");
+
     return 0;
+
 }
