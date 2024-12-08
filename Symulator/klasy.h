@@ -69,7 +69,7 @@ enum class rodzajeWartosci
 class WartZadana
 {
 public:
-    WartZadana(rodzajeWartosci typ, double maximum, double minimum)
+    WartZadana(rodzajeWartosci typ = rodzajeWartosci::skok, double maximum = 1, double minimum = -1)
     {
         rodzaj = typ;
         min = minimum;
