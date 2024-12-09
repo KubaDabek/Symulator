@@ -77,7 +77,8 @@ public:
         ifs >> mean >> stddev;
         dystrybucja = std::normal_distribution<double>(mean, stddev);
     }
-
+    //deprecated, probably broken
+    /*
     void zapiszBin(const std::string& nazwaPliku) {
         std::ofstream ofs(nazwaPliku, std::ios::binary);
         if (!ofs) return;
@@ -108,6 +109,7 @@ public:
         ifs.read(reinterpret_cast<char*>(&stddev), sizeof(stddev));
         dystrybucja = std::normal_distribution<double>(mean, stddev);
     }
+    */
 };
 
 template <typename T>
@@ -236,7 +238,8 @@ public:
         ifs >> dolnyLimit >> gornyLimit;
         ifs >> flagaPrzeciwNasyceniowa;
     }
-
+    //deprecated, probably broken
+    /*
     void zapiszBin(const std::string& nazwaPliku) {
         std::ofstream ofs(nazwaPliku, std::ios::binary);
         if (!ofs) return;
@@ -262,4 +265,5 @@ public:
         ifs.read(reinterpret_cast<char*>(&gornyLimit), sizeof(gornyLimit));
         ifs.read(reinterpret_cast<char*>(&flagaPrzeciwNasyceniowa), sizeof(flagaPrzeciwNasyceniowa));
     }
+    */
 };
