@@ -29,10 +29,23 @@ int main() {
     pid.zapiszBin("pid.bin");
 
     // Odczyt z plików
-    ARXModel wczytajARX({}, {});
+    ARXModel wczytajARX({0}, {0});
     PIDController wczytajPID(0.0, 0.0, 0.0);
     wczytajARX.wczytajText("arx.txt");
     wczytajPID.wczytajText("pid.txt");
+
+    pid.ustawLimity(-1.0, 1.0);
+
+    double wartoscZadana2 = 1.0;
+    double wartoscProcesu2 = 0.0;
+    for (int i = 0; i < 100; ++i) {
+        double sygnalKontrolny2 = wczytajPID.oblicz(wartoscZadana2, wartoscProcesu2);
+        wartoscProcesu2 = wczytajARX.krok(sygnalKontrolny2);
+        std::cout << "Krok: " << i
+            << " -> Sterowanie: " << sygnalKontrolny2
+            << " Wyjscie: " << wartoscProcesu2
+            << std::endl;
+    }
 
     return 0;
 

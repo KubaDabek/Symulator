@@ -57,11 +57,22 @@ public:
         if (!ifs) return;
         size_t rozmiarA, rozmiarB;
         ifs >> rozmiarA;
-        A.resize(rozmiarA);
-        for (size_t i = 0; i < rozmiarA; ++i) ifs >> A[i];
+        double wartA, wartB;
+        A.clear();
+        A.reserve(rozmiarA);
+        for (size_t i = 0; i < rozmiarA; ++i)
+        {
+            ifs >> wartA;
+            A.push_back(wartA);
+        }
         ifs >> rozmiarB;
-        B.resize(rozmiarB);
-        for (size_t i = 0; i < rozmiarB; ++i) ifs >> B[i];
+        B.clear();
+        B.reserve(rozmiarB);
+        for (size_t i = 0; i < rozmiarB; ++i)
+        {
+            ifs >> wartB;
+            B.push_back(wartB);
+        }
         double mean, stddev;
         ifs >> mean >> stddev;
         dystrybucja = std::normal_distribution<double>(mean, stddev);
@@ -152,6 +163,21 @@ public:
         }
     }
 
+    void zapiszText(const std::string& filename) {
+        std::ofstream ofs(filename);
+        if (!ofs) return;
+        ofs << min << "\n" << max << "\n" << static_cast<int>(rodzaj) << "\n";
+
+    }
+
+    void wczytajText(const std::string& nazwaPliku) {
+        std::ifstream ifs(nazwaPliku);
+        if (!ifs) return;
+        int typ;
+        ifs >> min >> max >> typ;
+        rodzaj = static_cast<rodzajeWartosci>(typ);
+    }
+
 private:
     rodzajeWartosci rodzaj = rodzajeWartosci::skok;
     double min = -1, max = 1;
@@ -197,7 +223,7 @@ public:
         std::ofstream ofs(filename);
         if (!ofs) return;
         ofs << kp << "\n" << ki << "\n" << kd << "\n";
-        ofs << calka << "\n" << bladPoprzedzajacy << "\n";
+        //ofs << calka << "\n" << bladPoprzedzajacy << "\n";
         ofs << dolnyLimit << "\n" << gornyLimit << "\n";
         ofs << flagaPrzeciwNasyceniowa << "\n";
     }
@@ -206,7 +232,7 @@ public:
         std::ifstream ifs(nazwaPliku);
         if (!ifs) return;
         ifs >> kp >> ki >> kd;
-        ifs >> calka >> bladPoprzedzajacy;
+        //ifs >> calka >> bladPoprzedzajacy;
         ifs >> dolnyLimit >> gornyLimit;
         ifs >> flagaPrzeciwNasyceniowa;
     }
