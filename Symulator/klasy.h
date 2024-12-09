@@ -125,7 +125,7 @@ enum class rodzajeWartosci
 class WartZadana
 {
 public:
-    WartZadana(rodzajeWartosci typ, double maximum, double minimum)
+    WartZadana(rodzajeWartosci typ = rodzajeWartosci::skok, double maximum = 1, double minimum = -1)
     {
         rodzaj = typ;
         min = minimum;
@@ -156,10 +156,10 @@ public:
         }
         else
         {
-            double amplituda = (abs(min) + abs(max)) / 2;
-            double kat = 0.0;
-            double w = (min + max) / 2 + (abs(max - min) / 2) * sin(krok * 0.1);
-            return w;
+            double amplituda = (max - min) / 2;
+            double przesuniecie = (max + min) / 2;
+            double kat = (static_cast<double>(krok) / 20) * 2.0 * 3.14;
+            return amplituda * sin(kat) + przesuniecie;
         }
     }
 
