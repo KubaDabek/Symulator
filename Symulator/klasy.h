@@ -24,6 +24,21 @@ public:
         u_hist = std::deque<double>(maxSize, 0.0);
         y_hist = std::deque<double>(maxSize, 0.0);
     }
+    ARXModel()
+        : dystrybucja(0.0, 0.01)
+    {
+        A = std::vector<double>({ 0.0 });
+        B = std::vector<double>({ 0.0 });
+        size_t maxSize = std::max(A.size(), B.size());
+        u_hist = std::deque<double>(maxSize, 0.0);
+        y_hist = std::deque<double>(maxSize, 0.0);
+    }
+    void setModel(const std::vector<double>& a, const std::vector<double>& b, double szum = 0.01)
+    {
+        A = a;
+        B = b;
+        dystrybucja = std::normal_distribution<double>(0.0, szum);
+    }
 
     double krok(double input) {
         u_hist.pop_front();
@@ -127,12 +142,21 @@ enum class rodzajeWartosci
 class WartZadana
 {
 public:
-    WartZadana(rodzajeWartosci typ = rodzajeWartosci::skok, double maximum = 1, double minimum = -1)
+    WartZadana(rodzajeWartosci typ = rodzajeWartosci::skok, double maximum = 1, double minimum = -1, int cykl = 20)
     {
         rodzaj = typ;
         min = minimum;
         max = maximum;
+        okres = cykl;
     };
+
+    void setWart(rodzajeWartosci typ = rodzajeWartosci::skok, double maximum = 1, double minimum = -1, int cykl = 20)
+    {
+        rodzaj = typ;
+        min = minimum;
+        max = maximum;
+        okres = cykl;
+    }
 
     double obliczWartosc(int krok)
     {
@@ -143,7 +167,7 @@ public:
         else if (rodzaj == rodzajeWartosci::kwadrat)
         {
             bool minMax = 0;
-            if (krok % 20 == 0)
+            if (krok % okres/2 == 0)
             {
                 minMax = !minMax;
             }
@@ -160,7 +184,7 @@ public:
         {
             double amplituda = (max - min) / 2;
             double przesuniecie = (max + min) / 2;
-            double kat = (static_cast<double>(krok) / 20) * 2.0 * 3.14;
+            double kat = (static_cast<double>(krok) / okres) * 2.0 * 3.14;
             return amplituda * sin(kat) + przesuniecie;
         }
     }
@@ -168,7 +192,7 @@ public:
     void zapiszText(const std::string& filename) {
         std::ofstream ofs(filename);
         if (!ofs) return;
-        ofs << min << "\n" << max << "\n" << static_cast<int>(rodzaj) << "\n";
+        ofs << min << "\n" << max << "\n" << okres << "\n" << static_cast<int>(rodzaj) << "\n";
 
     }
 
@@ -176,13 +200,14 @@ public:
         std::ifstream ifs(nazwaPliku);
         if (!ifs) return;
         int typ;
-        ifs >> min >> max >> typ;
+        ifs >> min >> max >> okres >> typ;
         rodzaj = static_cast<rodzajeWartosci>(typ);
     }
 
 private:
     rodzajeWartosci rodzaj = rodzajeWartosci::skok;
     double min = -1, max = 1;
+    int okres;
 };
 
 class PIDController {
@@ -199,10 +224,22 @@ public:
         calka(0.0), bladPoprzedzajacy(0.0), flagaPrzeciwNasyceniowa(true), wartosc(nullptr)
     {
     }
+    PIDController()
+        : kp(0.0), ki(0.0), kd(0.0), dolnyLimit(-1.0), gornyLimit(1.0),
+        calka(0.0), bladPoprzedzajacy(0.0), flagaPrzeciwNasyceniowa(true), wartosc(nullptr)
+    {
+    }
 
     void ustawLimity(double nizszy, double wyzszy) {
         dolnyLimit = nizszy;
         gornyLimit = wyzszy;
+    }
+
+    void setKontroler(double _kp, double _ki, double _kd)
+    {
+        kp = _kp;
+        ki = _ki;
+        kd = _kd;
     }
 
     void reset() {
@@ -267,3 +304,62 @@ public:
     }
     */
 };
+class UkladSterowania
+{
+public:
+    UkladSterowania()
+    {};
+    ~UkladSterowania()
+    {};
+    void setPID(double kp, double ki, double kd, double dolnyLimit = -1.0, double gornyLimit = 1.0)
+    {
+        kontroler.setKontroler(kp, ki, kd);
+        kontroler.ustawLimity(dolnyLimit, gornyLimit);
+    }
+    void setARX(const std::vector<double>& a, const std::vector<double>& b, double szum = 0.01)
+    {
+        model.setModel(a, b, szum);
+    }
+    void setWartosc(rodzajeWartosci rodzaj, double min, double max, int okres)
+    {
+        wartosc.setWart(rodzaj, min, max, okres);
+    }
+    void zapiszPlik(const std::string& nazwaPlikuARX, const std::string& nazwaPlikuPID, const std::string& nazwaPlikuWartosc)
+    {
+        model.zapiszText(nazwaPlikuARX);
+        kontroler.zapiszText(nazwaPlikuPID);
+        wartosc.zapiszText(nazwaPlikuWartosc);
+    }
+    void wczytajPlik(const std::string& nazwaPlikuARX, const std::string& nazwaPlikuPID, const std::string& nazwaPlikuWartosc)
+    {
+        model.wczytajText(nazwaPlikuARX);
+        kontroler.wczytajText(nazwaPlikuPID);
+        wartosc.wczytajText(nazwaPlikuWartosc);
+    }
+    std::vector<double> symulacja(int liczbaKrokow)
+    {
+
+        for (int i = 0; i < liczbaKrokow; ++i) {
+            wartoscZadana = wartosc.obliczWartosc(i);
+            double sygnalKontrolny = kontroler.oblicz(wartoscZadana, wartoscProcesu);
+            wartoscProcesu = model.krok(sygnalKontrolny);
+            /*
+            std::cerr << "Krok: " << i
+                << " -> Sterowanie: " << sygnalKontrolny
+                << " Wyjscie: " << wartoscProcesu
+                << std::endl;
+                */
+            obliczone.push_back(wartoscProcesu);
+        }
+        return obliczone;
+    }
+
+private:
+    ARXModel model;
+    PIDController kontroler;
+    WartZadana wartosc;
+    double wartoscProcesu = 0.0;
+    double wartoscZadana = 0.0;
+    std::vector<double> obliczone;
+};
+
