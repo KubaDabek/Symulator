@@ -1,12 +1,12 @@
 #define _CRT_SECURE_NO_WARNINGS
 #pragma once
 #include <vector>
-#include <queue>
+#include <deque>
 #include <random>
 #include <iostream>
 #include <algorithm>
-
-class PIDController;
+#include <fstream>
+#include <cmath>
 
 class ARXModel {
 private:
@@ -16,20 +16,13 @@ private:
     std::deque<double> y_hist;
     std::default_random_engine generator;
     std::normal_distribution<double> dystrybucja;
-
-    PIDController* pidController;
-
 public:
     ARXModel(const std::vector<double>& a, const std::vector<double>& b, double szum = 0.01)
-        : A(a), B(b), dystrybucja(0.0, szum), pidController(nullptr)
+        : A(a), B(b), dystrybucja(0.0, szum)
     {
         size_t maxSize = std::max(A.size(), B.size());
         u_hist = std::deque<double>(maxSize, 0.0);
         y_hist = std::deque<double>(maxSize, 0.0);
-    }
-
-    void setPIDController(PIDController* pid) {
-        pidController = pid;
     }
 
     double krok(double input) {
@@ -49,8 +42,71 @@ public:
         return y_k;
     }
 
-    PIDController* getPIDController() const {
-        return pidController;
+    void zapiszText(const std::string& nazwaPliku) {
+        std::ofstream ofs(nazwaPliku);
+        if (!ofs) return;
+        ofs << A.size() << "\n";
+        for (const auto& a : A) ofs << a << "\n";
+        ofs << B.size() << "\n";
+        for (const auto& b : B) ofs << b << "\n";
+        ofs << dystrybucja.mean() << "\n" << dystrybucja.stddev() << "\n";
+    }
+
+    void wczytajText(const std::string& nazwaPliku) {
+        std::ifstream ifs(nazwaPliku);
+        if (!ifs) return;
+        size_t rozmiarA, rozmiarB;
+        ifs >> rozmiarA;
+        double wartA, wartB;
+        A.clear();
+        A.reserve(rozmiarA);
+        for (size_t i = 0; i < rozmiarA; ++i)
+        {
+            ifs >> wartA;
+            A.push_back(wartA);
+        }
+        ifs >> rozmiarB;
+        B.clear();
+        B.reserve(rozmiarB);
+        for (size_t i = 0; i < rozmiarB; ++i)
+        {
+            ifs >> wartB;
+            B.push_back(wartB);
+        }
+        double mean, stddev;
+        ifs >> mean >> stddev;
+        dystrybucja = std::normal_distribution<double>(mean, stddev);
+    }
+
+    void zapiszBin(const std::string& nazwaPliku) {
+        std::ofstream ofs(nazwaPliku, std::ios::binary);
+        if (!ofs) return;
+        size_t rozmiarA = A.size();
+        size_t rozmiarB = B.size();
+        ofs.write(reinterpret_cast<const char*>(&rozmiarA), sizeof(rozmiarA));
+        ofs.write(reinterpret_cast<const char*>(A.data()), rozmiarA * sizeof(double));
+        ofs.write(reinterpret_cast<const char*>(&rozmiarB), sizeof(rozmiarB));
+        ofs.write(reinterpret_cast<const char*>(B.data()), rozmiarB * sizeof(double));
+        double mean = dystrybucja.mean();
+        double stddev = dystrybucja.stddev();
+        ofs.write(reinterpret_cast<const char*>(&mean), sizeof(mean));
+        ofs.write(reinterpret_cast<const char*>(&stddev), sizeof(stddev));
+    }
+
+    void wczytajBin(const std::string& nazwaPliku) {
+        std::ifstream ifs(nazwaPliku, std::ios::binary);
+        if (!ifs) return;
+        size_t rozmiarA, rozmiarB;
+        ifs.read(reinterpret_cast<char*>(&rozmiarA), sizeof(rozmiarA));
+        A.resize(rozmiarA);
+        ifs.read(reinterpret_cast<char*>(A.data()), rozmiarA * sizeof(double));
+        ifs.read(reinterpret_cast<char*>(&rozmiarB), sizeof(rozmiarB));
+        B.resize(rozmiarB);
+        ifs.read(reinterpret_cast<char*>(B.data()), rozmiarB * sizeof(double));
+        double mean, stddev;
+        ifs.read(reinterpret_cast<char*>(&mean), sizeof(mean));
+        ifs.read(reinterpret_cast<char*>(&stddev), sizeof(stddev));
+        dystrybucja = std::normal_distribution<double>(mean, stddev);
     }
 };
 
@@ -75,6 +131,7 @@ public:
         min = minimum;
         max = maximum;
     };
+
     double obliczWartosc(int krok)
     {
         if (rodzaj == rodzajeWartosci::skok)
@@ -106,6 +163,21 @@ public:
         }
     }
 
+    void zapiszText(const std::string& filename) {
+        std::ofstream ofs(filename);
+        if (!ofs) return;
+        ofs << min << "\n" << max << "\n" << static_cast<int>(rodzaj) << "\n";
+
+    }
+
+    void wczytajText(const std::string& nazwaPliku) {
+        std::ifstream ifs(nazwaPliku);
+        if (!ifs) return;
+        int typ;
+        ifs >> min >> max >> typ;
+        rodzaj = static_cast<rodzajeWartosci>(typ);
+    }
+
 private:
     rodzajeWartosci rodzaj = rodzajeWartosci::skok;
     double min = -1, max = 1;
@@ -118,15 +190,12 @@ private:
     double dolnyLimit, gornyLimit;
     bool flagaPrzeciwNasyceniowa;
     WartZadana* wartosc;
-    ARXModel* arxModel;
 
 public:
     PIDController(double kp, double ki, double kd, double dolnyLimit = -1.0, double gornyLimit = 1.0)
         : kp(kp), ki(ki), kd(kd), dolnyLimit(dolnyLimit), gornyLimit(gornyLimit),
-        calka(0.0), bladPoprzedzajacy(0.0), flagaPrzeciwNasyceniowa(true), arxModel(nullptr) {}
-
-    void setARXModel(ARXModel* model) {
-        arxModel = model;
+        calka(0.0), bladPoprzedzajacy(0.0), flagaPrzeciwNasyceniowa(true), wartosc(nullptr)
+    {
     }
 
     void ustawLimity(double nizszy, double wyzszy) {
@@ -150,9 +219,47 @@ public:
         }
         return wyjscie;
     }
+    void zapiszText(const std::string& filename) {
+        std::ofstream ofs(filename);
+        if (!ofs) return;
+        ofs << kp << "\n" << ki << "\n" << kd << "\n";
+        //ofs << calka << "\n" << bladPoprzedzajacy << "\n";
+        ofs << dolnyLimit << "\n" << gornyLimit << "\n";
+        ofs << flagaPrzeciwNasyceniowa << "\n";
+    }
 
-    ARXModel* getARXModel() const {
-        return arxModel;
+    void wczytajText(const std::string& nazwaPliku) {
+        std::ifstream ifs(nazwaPliku);
+        if (!ifs) return;
+        ifs >> kp >> ki >> kd;
+        //ifs >> calka >> bladPoprzedzajacy;
+        ifs >> dolnyLimit >> gornyLimit;
+        ifs >> flagaPrzeciwNasyceniowa;
+    }
+
+    void zapiszBin(const std::string& nazwaPliku) {
+        std::ofstream ofs(nazwaPliku, std::ios::binary);
+        if (!ofs) return;
+        ofs.write(reinterpret_cast<const char*>(&kp), sizeof(kp));
+        ofs.write(reinterpret_cast<const char*>(&ki), sizeof(ki));
+        ofs.write(reinterpret_cast<const char*>(&kd), sizeof(kd));
+        ofs.write(reinterpret_cast<const char*>(&calka), sizeof(calka));
+        ofs.write(reinterpret_cast<const char*>(&bladPoprzedzajacy), sizeof(bladPoprzedzajacy));
+        ofs.write(reinterpret_cast<const char*>(&dolnyLimit), sizeof(dolnyLimit));
+        ofs.write(reinterpret_cast<const char*>(&gornyLimit), sizeof(gornyLimit));
+        ofs.write(reinterpret_cast<const char*>(&flagaPrzeciwNasyceniowa), sizeof(flagaPrzeciwNasyceniowa));
+    }
+
+    void wczytajBin(const std::string& nazwaPliku) {
+        std::ifstream ifs(nazwaPliku, std::ios::binary);
+        if (!ifs) return;
+        ifs.read(reinterpret_cast<char*>(&kp), sizeof(kp));
+        ifs.read(reinterpret_cast<char*>(&ki), sizeof(ki));
+        ifs.read(reinterpret_cast<char*>(&kd), sizeof(kd));
+        ifs.read(reinterpret_cast<char*>(&calka), sizeof(calka));
+        ifs.read(reinterpret_cast<char*>(&bladPoprzedzajacy), sizeof(bladPoprzedzajacy));
+        ifs.read(reinterpret_cast<char*>(&dolnyLimit), sizeof(dolnyLimit));
+        ifs.read(reinterpret_cast<char*>(&gornyLimit), sizeof(gornyLimit));
+        ifs.read(reinterpret_cast<char*>(&flagaPrzeciwNasyceniowa), sizeof(flagaPrzeciwNasyceniowa));
     }
 };
-

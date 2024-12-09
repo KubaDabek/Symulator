@@ -9,9 +9,6 @@ int main() {
     ARXModel arxModel(a, b, 0.01);
     PIDController pid(1.0, 0.1, 0.05);
 
-    arxModel.setPIDController(&pid);
-    pid.setARXModel(&arxModel);
-
     pid.ustawLimity(-1.0, 1.0);
 
     double wartoscZadana = 1.0;
@@ -24,5 +21,32 @@ int main() {
             << " Wyjscie: " << wartoscProcesu
             << std::endl;
     }
+
+    // Zapis do plików
+    arxModel.zapiszText("arx.txt");
+    pid.zapiszText("pid.txt");
+    arxModel.zapiszBin("arx.bin");
+    pid.zapiszBin("pid.bin");
+
+    // Odczyt z plików
+    ARXModel wczytajARX({0}, {0});
+    PIDController wczytajPID(0.0, 0.0, 0.0);
+    wczytajARX.wczytajText("arx.txt");
+    wczytajPID.wczytajText("pid.txt");
+
+    pid.ustawLimity(-1.0, 1.0);
+
+    double wartoscZadana2 = 1.0;
+    double wartoscProcesu2 = 0.0;
+    for (int i = 0; i < 100; ++i) {
+        double sygnalKontrolny2 = wczytajPID.oblicz(wartoscZadana2, wartoscProcesu2);
+        wartoscProcesu2 = wczytajARX.krok(sygnalKontrolny2);
+        std::cout << "Krok: " << i
+            << " -> Sterowanie: " << sygnalKontrolny2
+            << " Wyjscie: " << wartoscProcesu2
+            << std::endl;
+    }
+
     return 0;
+
 }
