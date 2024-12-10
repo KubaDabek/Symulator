@@ -142,18 +142,18 @@ enum class rodzajeWartosci
 class WartZadana
 {
 public:
-    WartZadana(rodzajeWartosci typ = rodzajeWartosci::skok, double maximum = 1, double minimum = -1, int cykl = 20)
+    WartZadana(rodzajeWartosci typ = rodzajeWartosci::skok, double maximum = 1, int cykl = 20)
     {
         rodzaj = typ;
-        min = minimum;
+        min = 0;
         max = maximum;
         okres = cykl;
     };
 
-    void setWart(rodzajeWartosci typ = rodzajeWartosci::skok, double maximum = 1, double minimum = -1, int cykl = 20)
+    void setWart(rodzajeWartosci typ = rodzajeWartosci::skok, double maximum = 1, int cykl = 20)
     {
         rodzaj = typ;
-        min = minimum;
+        min = 0;
         max = maximum;
         okres = cykl;
     }
@@ -320,9 +320,9 @@ public:
     {
         model.setModel(a, b, szum);
     }
-    void setWartosc(rodzajeWartosci rodzaj, double min, double max, int okres)
+    void setWartosc(rodzajeWartosci rodzaj, double max, int okres)
     {
-        wartosc.setWart(rodzaj, min, max, okres);
+        wartosc.setWart(rodzaj, max, okres);
     }
     void zapiszPlik(const std::string& nazwaPlikuARX, const std::string& nazwaPlikuPID, const std::string& nazwaPlikuWartosc)
     {

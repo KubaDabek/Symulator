@@ -10,7 +10,7 @@ int main() {
     UkladSterowania uklad;
     uklad.setARX(a, b, 0.01);
     uklad.setPID(1.0, 0.1, 0.05, -1, 1);
-    uklad.setWartosc(rodzajeWartosci::sinus, -1, 1, 20);
+    uklad.setWartosc(rodzajeWartosci::sinus, 1, 20);
     std::vector<double> wyniki = uklad.symulacja(100);
     uklad.zapiszPlik("arx.txt", "pid.txt", "wartosc.txt");
     uklad.wczytajPlik("arx.txt", "pid.txt", "wartosc.txt");
