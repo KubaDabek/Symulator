@@ -216,7 +216,7 @@ private:
     double calka, bladPoprzedzajacy;
     double dolnyLimit, gornyLimit;
     bool flagaPrzeciwNasyceniowa;
-    WartZadana* wartosc;
+    //WartZadana* wartosc;
 
 public:
     PIDController(double kp, double ki, double kd, double dolnyLimit = -1.0, double gornyLimit = 1.0)
