@@ -221,12 +221,12 @@ private:
 public:
     PIDController(double kp, double ki, double kd, double dolnyLimit = -1.0, double gornyLimit = 1.0)
         : kp(kp), ki(ki), kd(kd), dolnyLimit(dolnyLimit), gornyLimit(gornyLimit),
-        calka(0.0), bladPoprzedzajacy(0.0), flagaPrzeciwNasyceniowa(true), wartosc(nullptr)
+        calka(0.0), bladPoprzedzajacy(0.0), flagaPrzeciwNasyceniowa(true)
     {
     }
     PIDController()
         : kp(0.0), ki(0.0), kd(0.0), dolnyLimit(-1.0), gornyLimit(1.0),
-        calka(0.0), bladPoprzedzajacy(0.0), flagaPrzeciwNasyceniowa(true), wartosc(nullptr)
+        calka(0.0), bladPoprzedzajacy(0.0), flagaPrzeciwNasyceniowa(true)
     {
     }
 
